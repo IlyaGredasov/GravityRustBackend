@@ -3,7 +3,7 @@ use std::{error::Error, fmt};
 use nalgebra::Vector2;
 use num_enum::TryFromPrimitive;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
+#[derive(Debug, Clone, Copy, PartialEq, TryFromPrimitive)]
 #[repr(i64)]
 pub enum MovementType {
     Static = 0,
@@ -71,14 +71,14 @@ impl fmt::Display for SpaceObject {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
+#[derive(Debug, Clone, Copy, PartialEq, TryFromPrimitive)]
 #[repr(i64)]
 pub enum CollisionType {
     Traversing = 0,
     Elastic = 1,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct ControllableAcceleration {
     pub right: bool,
     pub left: bool,
@@ -129,7 +129,7 @@ pub struct Simulation {
 
 impl Default for Simulation {
     fn default() -> Self {
-        Simulation::new(vec![], 10e-5, 10.0, 10.0, CollisionType::Elastic, 1.0, 0.5).unwrap()
+        Simulation::new(vec![], 1e-5, 10.0, 10.0, CollisionType::Elastic, 1.0, 0.5).unwrap()
     }
 }
 
@@ -190,7 +190,6 @@ impl Simulation {
     pub fn calculate_collisions(&mut self) {
         let mut collisions = Vec::new();
 
-        // Сбор столкновений
         for i in 0..self.space_objects.len() {
             for j in (i + 1)..self.space_objects.len() {
                 let delta_pos = self.space_objects[j].position - self.space_objects[i].position;
@@ -203,7 +202,6 @@ impl Simulation {
             }
         }
 
-        // Обработка столкновений
         for (i, j) in collisions {
             let delta_pos = self.space_objects[j].position - self.space_objects[i].position;
             let normal = delta_pos.normalize();
@@ -263,10 +261,9 @@ impl Simulation {
             let r_norm = r_vec.norm();
 
             if r_norm == 0.0 {
-                continue; // избегаем деления на 0
+                continue;
             }
 
-            // Гравитационное ускорение
             acceleration += self.g * obj_j.mass / r_norm.powf(1.5) * r_vec;
         }
 
@@ -292,10 +289,10 @@ impl Simulation {
 
         for i in 0..self.space_objects.len() {
             if self.space_objects[i].movement_type != MovementType::Static {
-                new_space_objects[i].acceleration = self.calculate_acceleration(i);
+                let acceleration = self.calculate_acceleration(i);
+                new_space_objects[i].acceleration = acceleration;
                 new_space_objects[i].position += self.space_objects[i].velocity * self.time_delta;
-                new_space_objects[i].velocity +=
-                    self.space_objects[i].acceleration * self.time_delta;
+                new_space_objects[i].velocity += acceleration * self.time_delta;
             }
         }
 
